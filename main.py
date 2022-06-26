@@ -40,9 +40,11 @@ def open_serial_port(device):
     logging.info('Trying to open port %s' % port)
     try:
       with serial.Serial(port, 4800, timeout=1) as ser:
+          for i in range(10):
+              ser.readline()
           # Read 10 lines and stop.
           for i in range(10):
-              line = ser.readline().strip()
+              line = ser.readline()
               if not line:
                 continue
               logging.info(log_color + 'Line: ' + Style.RESET_ALL,
@@ -50,7 +52,7 @@ def open_serial_port(device):
               try:
                 msg = pynmea2.parse(ser.readline().decode(
                     'ascii', errors='replace'))
-                logging.info(log_color + 'Message: ' + Style.RESET_ALL, msg)
+                logging.info('Message: ', msg)
               except pynmea2.nmea.ChecksumError:
                 logging.error(log_color + 'Checksum error!' + Style.RESET_ALL)
               except TypeError:
