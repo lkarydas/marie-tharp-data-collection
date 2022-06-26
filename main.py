@@ -42,7 +42,9 @@ def open_serial_port(device):
       with serial.Serial(port, 4800, timeout=1) as ser:
           # Read 10 lines and stop.
           for i in range(10):
-              line = ser.readline()
+              line = ser.readline().strip()
+              if not line:
+                continue
               logging.info(log_color + 'Line: ' + Style.RESET_ALL,
                           line.decode('ascii', errors='replace ').strip())
               msg = pynmea2.parse(ser.readline().decode(
