@@ -65,6 +65,7 @@ def open_serial_port(device):
           continue
         if line[3:6] in MESSAGES_TO_LOG:
           print(log_color + line + Style.RESET_ALL)
+        time.sleep(0.01)
 
   except serial.SerialException as e:
     logging.error(log_color + 'Could not open port %s' % port + Style.RESET_ALL)
