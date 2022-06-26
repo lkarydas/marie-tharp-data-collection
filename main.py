@@ -42,11 +42,8 @@ MESSAGES_TO_LOG = [
 ]
 
 def signal_handler(sig, frame):
-    print('You pressed Ctrl+C!')
+    print('SIGINT or CTRL-C detected. Exiting gracefully')
     sys.exit(0)
-
-signal.signal(signal.SIGINT, signal_handler)
-
 
 def open_serial_port(device):
   port = device.get('port')
@@ -79,6 +76,7 @@ def thread_function(device):
 
 
 def main():
+    signal.signal(signal.SIGINT, signal_handler)
     format = "%(asctime)s %(threadName)s: %(message)s"
     logging.basicConfig(format=format, level=logging.INFO,
                         datefmt="%Y%m%dT%H%M%S")
@@ -91,11 +89,6 @@ def main():
         t.daemon = True
         threads.append(t)
         t.start()
-
-    for index, thread in enumerate(threads):
-        logging.info("Main    : before joining thread %d.", index)
-        thread.join()
-        logging.info("Main    : thread %d done", index)
     
     # Infinate loop to keep the main thread alive.
     while True:
