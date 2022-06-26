@@ -10,6 +10,7 @@ import time
 import threading
 import logging
 import colorama
+import signal
 from colorama import Fore, Back, Style
 
 colorama.init()
@@ -39,6 +40,12 @@ MESSAGES_TO_LOG = [
   'GSA',  # GPS DOP and active satelites.
   'GSV',  # Satelites in view.
 ]
+
+def signal_handler(sig, frame):
+    print('You pressed Ctrl+C!')
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 
 def open_serial_port(device):
