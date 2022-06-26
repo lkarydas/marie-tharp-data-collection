@@ -96,6 +96,10 @@ def main():
         logging.info("Main    : before joining thread %d.", index)
         thread.join()
         logging.info("Main    : thread %d done", index)
+    
+    # Infinate loop to keep the main thread alive.
+    while True:
+      time.sleep(0.01)
 
 
 if __name__ == "__main__":
