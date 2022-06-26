@@ -56,12 +56,13 @@ def open_serial_port(device):
         ser.readline()
       # Keep reading from serial indefinitely.
       while True:
-        line = ser.readline()
-        line = line.decode('ascii', errors='replace').strip()
-        if not line:
+        sentence = ser.readline().decode('ascii', errors='replace').strip()
+        if not sentence:
           continue
-        if line[3:6] in MESSAGES_TO_LOG:
-          print(log_color + line + Style.RESET_ALL)
+        # Check if the NMEA sentence contains one of the messages we
+        # want to keep.
+        if sentence[3:6] in MESSAGES_TO_LOG:
+          print(log_color + sentence + Style.RESET_ALL)
         time.sleep(0.01)
 
   except serial.SerialException as e:
@@ -81,11 +82,15 @@ def main():
     logging.basicConfig(format=format, level=logging.INFO,
                         datefmt="%Y%m%dT%H%M%S")
 
+    # The list of threads we are using, one per device.
     threads = list()
+    # Start each thread.
     for index, device in enumerate(DEVICES):
         logging.info("Main    : create and start thread %d.", index)
         t = threading.Thread(target=thread_function, args=(device, ))
         t.name = device.get('short_name')
+        # Making the threads daemons means that they will be killed when
+        # the main program is killed.
         t.daemon = True
         threads.append(t)
         t.start()
