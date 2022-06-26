@@ -1,6 +1,5 @@
 """Main file for Marie Tharp data collection."""
 
-import pynmea2
 import serial
 import os
 import time
@@ -33,31 +32,35 @@ DEVICES = [
     }
 ]
 
+# Only log a subset of the messages we care about.
+MESSAGES_TO_LOG = [
+  'DPT',  # Depth of water.
+  'GGA',  # GPS fix data.
+  'GSA',  # GPS DOP and active satelites.
+  'GSV',  # Satelites in view.
+]
+
 
 def open_serial_port(device):
-    port = device.get('port')
-    log_color = device.get('log_color')
-    logging.info('Trying to open port %s' % port)
-    try:
-      with serial.Serial(port, 4800, timeout=1) as ser:
-          for i in range(10):
-              ser.readline()
-          # Read 10 lines and stop.
-          for i in range(10):
-              line = ser.readline()
-              if not line:
-                continue
-              print(log_color + line.decode('ascii', errors='replace').strip() + Style.RESET_ALL)
-              try:
-                msg = pynmea2.parse(ser.readline().decode(
-                    'ascii', errors='replace'))
-                print(log_color + 'Message: %s' % msg  + Style.RESET_ALL)
-              except pynmea2.nmea.ChecksumError:
-                logging.error(log_color + 'Checksum error!' + Style.RESET_ALL)
-              except TypeError:
-                logging.error(log_color + 'TypeError!' + Style.RESET_ALL)
-    except serial.SerialException as e:
-      logging.error(log_color + 'Could not open port %s' % port + Style.RESET_ALL)
+  port = device.get('port')
+  log_color = device.get('log_color')
+  logging.info('Trying to open port %s' % port)
+  try:
+    with serial.Serial(port, 4800, timeout=1) as ser:
+      # Discard the first 10 lines.
+      for i in range(10):
+        ser.readline()
+      # Keep reading from serial indefinitely.
+      while True:
+        line = ser.readline()
+        line = line.decode('ascii', errors='replace').strip()
+        if not line:
+          continue
+        if line[3:6] in MESSAGES_TO_LOG:
+          print(log_color + line + Style.RESET_ALL)
+
+  except serial.SerialException as e:
+    logging.error(log_color + 'Could not open port %s' % port + Style.RESET_ALL)
 
 
 def thread_function(device):
