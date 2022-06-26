@@ -47,9 +47,12 @@ def open_serial_port(device):
                 continue
               logging.info(log_color + 'Line: ' + Style.RESET_ALL,
                           line.decode('ascii', errors='replace ').strip())
-              msg = pynmea2.parse(ser.readline().decode(
-                  'ascii', errors='replace'))
-              logging.info(log_color + 'Message: ' + Style.RESET_ALL, msg)
+              try:
+                msg = pynmea2.parse(ser.readline().decode(
+                    'ascii', errors='replace'))
+                logging.info(log_color + 'Message: ' + Style.RESET_ALL, msg)
+              except pynmea2.nmea.ChecksumError:
+                logging.error(log_color + 'Checksum error!' + Style.RESET_ALL, msg)
     except serial.SerialException as e:
       logging.error(log_color + 'Could not open port %s' % port + Style.RESET_ALL)
 
