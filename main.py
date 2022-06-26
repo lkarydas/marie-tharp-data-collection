@@ -53,6 +53,8 @@ def open_serial_port(device):
                 logging.info(log_color + 'Message: ' + Style.RESET_ALL, msg)
               except pynmea2.nmea.ChecksumError:
                 logging.error(log_color + 'Checksum error!' + Style.RESET_ALL)
+              except TypeError:
+                logging.error(log_color + 'TypeError!' + Style.RESET_ALL)
     except serial.SerialException as e:
       logging.error(log_color + 'Could not open port %s' % port + Style.RESET_ALL)
 
