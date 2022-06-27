@@ -52,7 +52,7 @@ def open_serial_port(device):
   """Opens a serial port and logs the data."""
   port = device.get('port')
   log_color = device.get('log_color')
-  logging.info('Trying to open port %s', port)
+  logging.info(log_color + 'Trying to open port %s' + Style.RESET_ALL, port)
   try:
     with serial.Serial(port, 4800, timeout=1) as ser:
       # Discard the first 10 lines.
@@ -75,13 +75,17 @@ def open_serial_port(device):
 
 
 def thread_function(device):
+  """The main method for each thead."""
   log_color = device.get('log_color')
-  logging.info("Thread %s: starting", device.get('device_name'))
+  logging.info(log_color + 'Thread %s: Start.' +
+               Style.RESET_ALL, device.get('device_name'))
   open_serial_port(device)
-  logging.info("Thread %s: finishing", device.get('device_name'))
+  logging.info(log_color + 'Thread %s: Finish.' +
+               Style.RESET_ALL, device.get('device_name'))
 
 
 def main():
+  """Main method."""
   signal.signal(signal.SIGINT, signal_handler)
   format_string = "%(asctime)s %(threadName)s: %(message)s"
   logging.basicConfig(format=format_string, level=logging.INFO,
@@ -91,7 +95,7 @@ def main():
   thread_list = list()
   # Start each thread.
   for index, device in enumerate(DEVICES):
-    logging.info("Create and start thread %d for device %r.", index,
+    logging.info('Create and start thread %d for device %r.', index,
                  device.get('device_name'))
     thread = threading.Thread(target=thread_function, args=(device, ))
     thread.name = device.get('short_name')
