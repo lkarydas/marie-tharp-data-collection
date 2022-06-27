@@ -48,11 +48,14 @@ def signal_handler(sig, frame):
   sys.exit(0)
 
 
-def open_serial_port(device):
+def open_port_and_log_data(device):
   """Opens a serial port and logs the data."""
   port = device.get('port')
   log_color = device.get('log_color')
-  logging.info(log_color + 'Trying to open port %s' + Style.RESET_ALL, port)
+  device_name = device.get('device_name')
+
+  logging.info(log_color + 'Trying to open port %s for %r' + Style.RESET_ALL,
+               port, device_name)
   try:
     with serial.Serial(port, 4800, timeout=1) as ser:
       # Discard the first 10 lines.
@@ -72,14 +75,6 @@ def open_serial_port(device):
   except serial.SerialException:
     logging.error(log_color + 'Could not open port %s' %
                   port + Style.RESET_ALL)
-
-
-def thread_function(device):
-  """The main method for each thead."""
-  log_color = device.get('log_color')
-  logging.info(log_color + 'Thread %s: Start.' +
-               Style.RESET_ALL, device.get('device_name'))
-  open_serial_port(device)
   logging.info(log_color + 'Thread %s: Finish.' +
                Style.RESET_ALL, device.get('device_name'))
 
@@ -92,12 +87,12 @@ def main():
                       datefmt="%Y%m%dT%H%M%S")
 
   # The list of threads we are using, one per device.
-  thread_list = list()
+  thread_list = []
   # Start each thread.
   for index, device in enumerate(DEVICES):
     logging.info('Create and start thread %d for device %r.', index,
                  device.get('device_name'))
-    thread = threading.Thread(target=thread_function, args=(device, ))
+    thread = threading.Thread(target=open_port_and_log_data, args=(device, ))
     thread.name = device.get('short_name')
     # Making the threads daemons means that they will be killed when
     # the main program is killed.
