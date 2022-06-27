@@ -1,17 +1,14 @@
 """Main file for Marie Tharp data collection."""
 
-import serial
-import os
-import time
 import sys
-import glob
-import datetime
-import time
 import threading
+import time
 import logging
-import colorama
 import signal
-from colorama import Fore, Back, Style
+
+import serial
+import colorama
+from colorama import Fore, Style
 
 import thread_utils
 
@@ -37,24 +34,29 @@ DEVICES = [
 
 # Only log a subset of the messages we care about.
 MESSAGES_TO_LOG = [
-  'DPT',  # Depth of water.
-  'GGA',  # GPS fix data.
-  'GSA',  # GPS DOP and active satelites.
-  'GSV',  # Satelites in view.
+    'DPT',  # Depth of water.
+    'GGA',  # GPS fix data.
+    'GSA',  # GPS DOP and active satelites.
+    'GSV',  # Satelites in view.
 ]
 
+
 def signal_handler(sig, frame):
-    print('SIGINT or CTRL-C detected. Exiting gracefully')
-    sys.exit(0)
+  """Signal handler."""
+  del sig, frame
+  print('SIGINT or CTRL-C detected. Exiting gracefully')
+  sys.exit(0)
+
 
 def open_serial_port(device):
+  """Opens a serial port and logs the data."""
   port = device.get('port')
   log_color = device.get('log_color')
-  logging.info('Trying to open port %s' % port)
+  logging.info('Trying to open port %s', port)
   try:
     with serial.Serial(port, 4800, timeout=1) as ser:
       # Discard the first 10 lines.
-      for i in range(10):
+      for _ in range(10):
         ser.readline()
       # Keep reading from serial indefinitely.
       while True:
@@ -67,44 +69,46 @@ def open_serial_port(device):
           print(log_color + sentence + Style.RESET_ALL)
         time.sleep(0.01)
 
-  except serial.SerialException as e:
-    logging.error(log_color + 'Could not open port %s' % port + Style.RESET_ALL)
+  except serial.SerialException:
+    logging.error(log_color + 'Could not open port %s' %
+                  port + Style.RESET_ALL)
 
 
 def thread_function(device):
-    log_color = device.get('log_color')
-    logging.info("Thread %s: starting", device.get('device_name'))
-    open_serial_port(device)
-    logging.info("Thread %s: finishing", device.get('device_name'))
+  log_color = device.get('log_color')
+  logging.info("Thread %s: starting", device.get('device_name'))
+  open_serial_port(device)
+  logging.info("Thread %s: finishing", device.get('device_name'))
 
 
 def main():
-    signal.signal(signal.SIGINT, signal_handler)
-    format = "%(asctime)s %(threadName)s: %(message)s"
-    logging.basicConfig(format=format, level=logging.INFO,
-                        datefmt="%Y%m%dT%H%M%S")
+  signal.signal(signal.SIGINT, signal_handler)
+  format_string = "%(asctime)s %(threadName)s: %(message)s"
+  logging.basicConfig(format=format_string, level=logging.INFO,
+                      datefmt="%Y%m%dT%H%M%S")
 
-    # The list of threads we are using, one per device.
-    threads = list()
-    # Start each thread.
-    for index, device in enumerate(DEVICES):
-        logging.info("Main    : create and start thread %d.", index)
-        t = threading.Thread(target=thread_function, args=(device, ))
-        t.name = device.get('short_name')
-        # Making the threads daemons means that they will be killed when
-        # the main program is killed.
-        t.daemon = True
-        threads.append(t)
-        t.start()
-    
-    # Infinate loop to keep the main program going, as long at least one
-    # of the other threads are still alive.
-    while True:
-      if thread_utils.are_all_threads_dead(threads):
-        logging.fatal('All threads are dead.')
-        exit(1)
-      time.sleep(0.01)
+  # The list of threads we are using, one per device.
+  thread_list = list()
+  # Start each thread.
+  for index, device in enumerate(DEVICES):
+    logging.info("Create and start thread %d for device %r.", index,
+                 device.get('device_name'))
+    thread = threading.Thread(target=thread_function, args=(device, ))
+    thread.name = device.get('short_name')
+    # Making the threads daemons means that they will be killed when
+    # the main program is killed.
+    thread.daemon = True
+    thread_list.append(thread)
+    thread.start()
+
+  # Infinate loop to keep the main program going, as long at least one
+  # of the other threads are still alive.
+  while True:
+    if thread_utils.are_all_threads_dead(thread_list):
+      logging.fatal('All threads are dead.')
+      sys.exit(1)
+    time.sleep(0.01)
 
 
 if __name__ == "__main__":
-    main()
+  main()
