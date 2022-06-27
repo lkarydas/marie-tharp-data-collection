@@ -13,6 +13,8 @@ import colorama
 import signal
 from colorama import Fore, Back, Style
 
+import thread_utils
+
 colorama.init()
 
 # Lock to serialize console output.
@@ -95,8 +97,12 @@ def main():
         threads.append(t)
         t.start()
     
-    # Infinate loop to keep the main thread alive.
+    # Infinate loop to keep the main program going, as long at least one
+    # of the other threads are still alive.
     while True:
+      if thread_utils.are_all_threads_dead(threads):
+        logging.fatal('All threads are dead.')
+        exit(1)
       time.sleep(0.01)
 
 
