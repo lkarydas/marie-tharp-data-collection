@@ -73,8 +73,7 @@ def open_port_and_log_data(device):
         time.sleep(0.01)
 
   except serial.SerialException:
-    logging.error(log_color + 'Could not open port %s' %
-                  port + Style.RESET_ALL)
+    logging.error(log_color + f'Could not open port {port}' + Style.RESET_ALL)
   logging.info(log_color + 'Thread %s: Finish.' +
                Style.RESET_ALL, device.get('device_name'))
 
