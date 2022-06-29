@@ -13,8 +13,13 @@ import colorama
 from colorama import Fore, Style
 import serial
 import thread_utils
+import timestamp_utils
 
 FLAGS = flags.FLAGS
+
+flags.DEFINE_boolean('save_debug_data', False, 'Saves a sample of data to a file and exits.')
+
+DEBUG_DATA_SAMPLE_SIZE = 50  # Number of lines to save to debug file.
 
 colorama.init()
 
@@ -57,6 +62,7 @@ def open_port_and_log_data(device):
   port = device.get('port')
   log_color = device.get('log_color')
   device_name = device.get('device_name')
+  device_short_name = device.get('short_name')
 
   logging.info(log_color + 'Trying to open port %s for %r' + Style.RESET_ALL,
                port, device_name)
@@ -65,6 +71,16 @@ def open_port_and_log_data(device):
       # Discard the first 10 lines.
       for _ in range(10):
         ser.readline()
+
+      # When the `save_debug_data` flag is set, we save a sample of the data
+      # to a file. Useful for debugging stuff later.
+      if FLAGS.save_debug_data:
+        utc_now = timestamp_utils.get_utc_timestamp()
+        debug_data_file_name = f'{utc_now}_{device_short_name}_debug.dat'
+        with open(debug_data_file_name, 'a', encoding='utf8') as f:
+          for _ in range(DEBUG_DATA_SAMPLE_SIZE):
+            f.write(ser.readline())
+
       # Keep reading from serial indefinitely.
       while True:
         sentence = ser.readline().decode('ascii', errors='replace').strip()
