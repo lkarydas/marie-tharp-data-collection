@@ -6,11 +6,15 @@ import time
 import logging
 import signal
 
-import serial
+from absl import app
+from absl import flags
+
 import colorama
 from colorama import Fore, Style
-
+import serial
 import thread_utils
+
+FLAGS = flags.FLAGS
 
 colorama.init()
 
@@ -78,8 +82,9 @@ def open_port_and_log_data(device):
                Style.RESET_ALL, device.get('device_name'))
 
 
-def main():
-  """Main method."""
+def main(argv):
+  """Main method for data collection."""
+  del argv  # Unused.
   signal.signal(signal.SIGINT, signal_handler)
   format_string = "%(asctime)s %(threadName)s: %(message)s"
   logging.basicConfig(format=format_string, level=logging.INFO,
@@ -103,10 +108,10 @@ def main():
   # of the other threads are still alive.
   while True:
     if thread_utils.are_all_threads_dead(thread_list):
-      logging.fatal('All threads are dead.')
+      logging.info('All threads are dead.')
       sys.exit(1)
     time.sleep(0.01)
 
 
 if __name__ == "__main__":
-  main()
+  app.run(main)
