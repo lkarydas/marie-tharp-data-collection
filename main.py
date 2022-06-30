@@ -80,6 +80,7 @@ def open_port_and_log_data(device):
         with open(debug_data_file_name, 'ab') as f:
           for _ in range(DEBUG_DATA_SAMPLE_SIZE):
             f.write(ser.readline())
+        return 0
 
       # Keep reading from serial indefinitely.
       while True:
