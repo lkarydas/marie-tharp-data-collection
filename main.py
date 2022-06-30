@@ -1,5 +1,6 @@
 """Main file for Marie Tharp data collection."""
 
+import os
 import sys
 import threading
 import time
@@ -17,7 +18,10 @@ import timestamp_utils
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_boolean('save_debug_data', False, 'Saves a sample of data to a file and exits.')
+flags.DEFINE_string('output_dir', '.', 'Output directory for the data files.')
+flags.DEFINE_bool('output_data', True, 'Whether or not to save the data.')
+flags.DEFINE_boolean('save_debug_data', False,
+                     'Saves a sample of data to a file and exits.')
 
 DEBUG_DATA_SAMPLE_SIZE = 50  # Number of lines to save to debug file.
 
@@ -38,7 +42,13 @@ DEVICES = [
         'short_name': 'garmin_gps_18x',
         'port': 'COM3',
         'log_color': Fore.RED,
-    }
+    },
+    {
+        'device_name': 'Arduino Flowmeter',
+        'short_name': 'flowmeter',
+        'port': 'COM9',
+        'log_color': Fore.BLUE,
+    },
 ]
 
 # Only log a subset of the messages we care about.
@@ -57,7 +67,7 @@ def signal_handler(sig, frame):
   sys.exit(0)
 
 
-def open_port_and_log_data(device):
+def open_port_and_log_data(device, timestamp):
   """Opens a serial port and logs the data."""
   port = device.get('port')
   log_color = device.get('log_color')
@@ -75,23 +85,27 @@ def open_port_and_log_data(device):
       # When the `save_debug_data` flag is set, we save a sample of the data
       # to a file. Useful for debugging stuff later.
       if FLAGS.save_debug_data:
-        utc_now = timestamp_utils.get_utc_timestamp()
-        debug_data_file_name = f'{utc_now}_{device_short_name}_debug.dat'
+        debug_data_file_name = f'{timestamp}_{device_short_name}_debug.dat'
         with open(debug_data_file_name, 'ab') as f:
           for _ in range(DEBUG_DATA_SAMPLE_SIZE):
             f.write(ser.readline())
         return 0
 
       # Keep reading from serial indefinitely.
-      while True:
-        sentence = ser.readline().decode('ascii', errors='replace').strip()
-        if not sentence:
-          continue
-        # Check if the NMEA sentence contains one of the messages we
-        # want to keep.
-        if sentence[3:6] in MESSAGES_TO_LOG:
-          print(log_color + sentence + Style.RESET_ALL)
-        time.sleep(0.01)
+
+      output_file = os.path.join(FLAGS.output_dir,
+                                 f'{timestamp}_{device_short_name}.dat')
+      with open(output_file, 'a') as f:
+        while True:
+          sentence = ser.readline().decode('ascii', errors='replace').strip()
+          if not sentence:
+            continue
+          # Check if the NMEA sentence contains one of the messages we
+          # want to keep.
+          if sentence[3:6] in MESSAGES_TO_LOG:
+            print(log_color + sentence + Style.RESET_ALL)
+            f.write()
+          time.sleep(0.01)
 
   except serial.SerialException:
     logging.error(log_color + f'Could not open port {port}' + Style.RESET_ALL)
@@ -110,10 +124,13 @@ def main(argv):
   # The list of threads we are using, one per device.
   thread_list = []
   # Start each thread.
+  utc_now = timestamp_utils.get_utc_timestamp()
+  logging.info('Using timestamp: %s', utc_now)
   for index, device in enumerate(DEVICES):
     logging.info('Create and start thread %d for device %r.', index,
                  device.get('device_name'))
-    thread = threading.Thread(target=open_port_and_log_data, args=(device, ))
+    thread = threading.Thread(target=open_port_and_log_data,
+                              args=(device, utc_now,))
     thread.name = device.get('short_name')
     # Making the threads daemons means that they will be killed when
     # the main program is killed.
