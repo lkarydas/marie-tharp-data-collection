@@ -77,7 +77,7 @@ def open_port_and_log_data(device):
       if FLAGS.save_debug_data:
         utc_now = timestamp_utils.get_utc_timestamp()
         debug_data_file_name = f'{utc_now}_{device_short_name}_debug.dat'
-        with open(debug_data_file_name, 'a', encoding='utf8') as f:
+        with open(debug_data_file_name, 'ab', encoding='utf8') as f:
           for _ in range(DEBUG_DATA_SAMPLE_SIZE):
             f.write(ser.readline())
 
