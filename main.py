@@ -36,6 +36,7 @@ DEVICES = [
         'short_name': 'maretron_nmea_gateway',
         'port': 'COM8',
         'baud_rate': 4800,
+        'timeout': 1,
         'log_color': Fore.GREEN,
     },
     {
@@ -43,6 +44,7 @@ DEVICES = [
         'short_name': 'garmin_gps_18x',
         'port': 'COM3',
         'baud_rate': 4800,
+        'timeout': 1,
         'log_color': Fore.RED,
     },
     {
@@ -50,6 +52,7 @@ DEVICES = [
         'short_name': 'flowmeter',
         'port': 'COM9',
         'baud_rate': 9600,
+        'timeout': 3,
         'log_color': Fore.BLUE,
     },
 ]
@@ -77,11 +80,12 @@ def open_port_and_log_data(device, timestamp):
   device_name = device.get('device_name')
   device_short_name = device.get('short_name')
   baud_rate = device.get('baud_rate')
+  timeout = device.get('timeout')
 
   logging.info(log_color + 'Trying to open port %s for %r' + Style.RESET_ALL,
                port, device_name)
   try:
-    with serial.Serial(port, baud_rate, timeout=1) as ser:
+    with serial.Serial(port, baud_rate, timeout=timeout) as ser:
       # Discard the first 10 lines.
       for _ in range(10):
         ser.readline()
