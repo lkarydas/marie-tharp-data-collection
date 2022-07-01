@@ -119,7 +119,7 @@ def open_port_and_log_data(device, timestamp):
               continue
           print(log_color + sentence + Style.RESET_ALL)
           utc_now = timestamp_utils.get_utc_timestamp_with_microseconds()
-          f.write(f'{utc_now},{sentence}\n')
+          f.write(utc_now + ',' + sentence + '\n')
           time.sleep(0.01)
 
   except serial.SerialException:
@@ -139,7 +139,7 @@ def main(argv):
   # The list of threads we are using, one per device.
   thread_list = []
   # Start each thread.
-  utc_now = timestamp_utils.get_utc_timestamp_with_microseconds()
+  utc_now = timestamp_utils.get_utc_timestamp()
   logging.info('Using timestamp: %s', utc_now)
   for index, device in enumerate(DEVICES):
     logging.info('Create and start thread %d for device %r.', index,
