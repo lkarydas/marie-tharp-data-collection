@@ -118,12 +118,9 @@ def open_port_and_log_data(device, timestamp):
             if sentence[3:6] not in MESSAGES_TO_LOG:
               continue
           print(log_color + sentence + Style.RESET_ALL)
-
           utc_now = timestamp_utils.get_utc_timestamp_with_microseconds()
-          string_to_write = utc_now + ',' + sentence + '\n'
-          logging.info(string_to_write)
-          print(string_to_write)
-          f.write(string_to_write)
+          f.write(utc_now + ',' + sentence + '\n')
+          f.flush()  # We need to flush after each write.
           time.sleep(0.01)
 
   except serial.SerialException:
