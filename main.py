@@ -103,7 +103,7 @@ def open_port_and_log_data(device, timestamp):
 
       output_file = os.path.join(FLAGS.output_dir,
                                  f'{timestamp}_{device_short_name}.dat')
-      with open(output_file, 'a') as f:
+      with open(output_file, 'a', encoding='utf-8') as f:
         while True:
           sentence = ser.readline().decode('ascii', errors='replace').strip()
           if not sentence:
@@ -112,7 +112,8 @@ def open_port_and_log_data(device, timestamp):
           # want to keep.
           if sentence[3:6] in MESSAGES_TO_LOG:
             print(log_color + sentence + Style.RESET_ALL)
-            f.write()
+            utc_now = timestamp_utils.get_utc_timestamp_with_microseconds()
+            f.write(f'{utc_now},{sentence}')
           time.sleep(0.01)
 
   except serial.SerialException:
@@ -132,7 +133,7 @@ def main(argv):
   # The list of threads we are using, one per device.
   thread_list = []
   # Start each thread.
-  utc_now = timestamp_utils.get_utc_timestamp()
+  utc_now = timestamp_utils.get_utc_timestamp_with_microseconds()
   logging.info('Using timestamp: %s', utc_now)
   for index, device in enumerate(DEVICES):
     logging.info('Create and start thread %d for device %r.', index,
