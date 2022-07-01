@@ -34,6 +34,7 @@ DEVICES = [
     {
         'device_name': 'Maretron NMEA USB Gateway',
         'short_name': 'maretron_nmea_gateway',
+        'device_type': 'NMEA',
         'port': 'COM8',
         'baud_rate': 4800,
         'timeout': 1,
@@ -42,6 +43,7 @@ DEVICES = [
     {
         'device_name': 'Garmin GPS 18x',
         'short_name': 'garmin_gps_18x',
+        'device_type': 'NMEA',
         'port': 'COM3',
         'baud_rate': 4800,
         'timeout': 1,
@@ -50,6 +52,7 @@ DEVICES = [
     {
         'device_name': 'Arduino Flowmeter',
         'short_name': 'flowmeter',
+        'device_type': 'text',
         'port': 'COM9',
         'baud_rate': 9600,
         'timeout': 3,
@@ -81,6 +84,7 @@ def open_port_and_log_data(device, timestamp):
   device_short_name = device.get('short_name')
   baud_rate = device.get('baud_rate')
   timeout = device.get('timeout')
+  device_type = device.get('device_type')
 
   logging.info(log_color + 'Trying to open port %s for %r' + Style.RESET_ALL,
                port, device_name)
@@ -108,12 +112,14 @@ def open_port_and_log_data(device, timestamp):
           sentence = ser.readline().decode('ascii', errors='replace').strip()
           if not sentence:
             continue
-          # Check if the NMEA sentence contains one of the messages we
-          # want to keep.
-          if sentence[3:6] in MESSAGES_TO_LOG:
-            print(log_color + sentence + Style.RESET_ALL)
-            utc_now = timestamp_utils.get_utc_timestamp_with_microseconds()
-            f.write(f'{utc_now},{sentence}')
+          if device_type == 'NMEA':
+            # Check if the NMEA sentence contains one of the messages we
+            # want to keep.
+            if sentence[3:6] not in MESSAGES_TO_LOG:
+              continue
+          print(log_color + sentence + Style.RESET_ALL)
+          utc_now = timestamp_utils.get_utc_timestamp_with_microseconds()
+          f.write(f'{utc_now},{sentence}')
           time.sleep(0.01)
 
   except serial.SerialException:
