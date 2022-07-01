@@ -119,7 +119,7 @@ def open_port_and_log_data(device, timestamp):
               continue
           print(log_color + sentence + Style.RESET_ALL)
           utc_now = timestamp_utils.get_utc_timestamp_with_microseconds()
-          f.write(f'{utc_now},{sentence}')
+          f.write(f'{utc_now},{sentence}\n')
           time.sleep(0.01)
 
   except serial.SerialException:
