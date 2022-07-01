@@ -10,6 +10,9 @@ import signal
 from absl import app
 from absl import flags
 
+import nmea_utils
+import datetime
+from datetime import timedelta
 import colorama
 from colorama import Fore, Style
 import serial
@@ -90,10 +93,6 @@ def open_port_and_log_data(device, timestamp):
                port, device_name)
   try:
     with serial.Serial(port, baud_rate, timeout=timeout) as ser:
-      # Discard the first 10 lines.
-      for _ in range(10):
-        ser.readline()
-
       # When the `save_debug_data` flag is set, we save a sample of the data
       # to a file. Useful for debugging stuff later.
       if FLAGS.save_debug_data:
@@ -103,24 +102,35 @@ def open_port_and_log_data(device, timestamp):
             f.write(ser.readline())
         return 0
 
+      # A dictionary that keeps track of the timestamp that each message was
+      # last written to the file.
+      last_written = {}
       # Keep reading from serial indefinitely.
-
       output_file = os.path.join(FLAGS.output_dir,
                                  f'{timestamp}_{device_short_name}.dat')
       with open(output_file, 'a', encoding='utf-8') as f:
         while True:
           sentence = ser.readline().decode('ascii', errors='replace').strip()
+          utc_now = datetime.datetime.utcnow()
           if not sentence:
             continue
           if device_type == 'NMEA':
+            # Get the message code.
+            code = nmea_utils.get_message_code(sentence)
+            if not code:
+              continue
             # Check if the NMEA sentence contains one of the messages we
             # want to keep.
-            if sentence[3:6] not in MESSAGES_TO_LOG:
+            if code not in MESSAGES_TO_LOG:
+              continue
+            if (code in last_written and
+                    utc_now - last_written[code] < timedelta(seconds=1)):
               continue
           print(log_color + sentence + Style.RESET_ALL)
-          utc_now = timestamp_utils.get_utc_timestamp_with_microseconds()
-          f.write(utc_now + ',' + sentence + '\n')
+          f.write(utc_now.strftime('%Y%m%dT%H%M%S%f') + ',' + sentence + '\n')
           f.flush()  # We need to flush after each write.
+          if device_type == 'NMEA':
+            last_written[code] = utc_now
           time.sleep(0.01)
 
   except serial.SerialException:
