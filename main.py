@@ -90,9 +90,6 @@ def open_port_and_log_data(device, timestamp):
                port, device_name)
   try:
     with serial.Serial(port, baud_rate, timeout=timeout) as ser:
-      # Discard the first 10 lines.
-      for _ in range(10):
-        ser.readline()
 
       # When the `save_debug_data` flag is set, we save a sample of the data
       # to a file. Useful for debugging stuff later.
